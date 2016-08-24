@@ -10,12 +10,14 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.store.FileDataStoreFactory;
 import com.google.api.services.sheets.v4.Sheets;
 import com.google.api.services.sheets.v4.SheetsScopes;
+import com.google.api.services.sheets.v4.model.UpdateValuesResponse;
 import com.google.api.services.sheets.v4.model.ValueRange;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -28,6 +30,14 @@ public class SheetsHelper {
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
     private static HttpTransport HTTP_TRANSPORT;
     private static final List<String> SCOPES = Arrays.asList(SheetsScopes.SPREADSHEETS);
+
+    private Sheets service;
+    private String spreadSheetId;
+
+    public SheetsHelper(Sheets service, String id){
+        this.service = service;
+        this.spreadSheetId = id;
+    }
 
     static {
         try {
@@ -64,10 +74,33 @@ public class SheetsHelper {
                 .build();
     }
 
-    public static List<List<Object>> getValues(Sheets service, String id, String loc) throws java.io.IOException{
+    public List<List<Object>> getValues(String loc) throws java.io.IOException{
         ValueRange response = service.spreadsheets().values()
-                .get(id, loc)
+                .get(spreadSheetId, loc)
                 .execute();
         return response.getValues();
+    }
+
+    public UpdateValuesResponse writeToSheet(String range, List<List<Object>> data) throws java.io.IOException{
+        ValueRange toWrite = new ValueRange();
+        toWrite.setMajorDimension("ROWS");
+        toWrite.setRange(range);
+        toWrite.setValues(data);
+
+        return service.spreadsheets().values()
+                .update(spreadSheetId, range, toWrite)
+                .set("valueInputOption", "USER_ENTERED")
+                .execute();
+    }
+
+    public UpdateValuesResponse updateWriteRange(String writeRange) throws java.io.IOException{
+        int aVal = Integer.parseInt(writeRange.substring(1, writeRange.indexOf(':')));
+        int bVal = Integer.parseInt(writeRange.substring(writeRange.indexOf(':')+2, writeRange.length()));
+        writeRange = "" + writeRange.charAt(0) + (aVal+1) + ':' + writeRange.charAt(writeRange.indexOf(':')+1) + (bVal+1);
+        List<List<Object>> data = new LinkedList<>();
+        List<Object> row1 = new LinkedList<>();
+        row1.add(writeRange);
+        data.add(row1);
+        return writeToSheet(SheetsQuickstart.CURRENT_RANGE_LOCATION, data);
     }
 }

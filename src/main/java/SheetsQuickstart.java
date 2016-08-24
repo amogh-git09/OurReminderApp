@@ -12,8 +12,9 @@ public class SheetsQuickstart {
 
   public static void main(String[] args) throws IOException {
     Sheets service = SheetsHelper.getSheetsService();
+    SheetsHelper sheetsHelper = new SheetsHelper(service, SPREADSHEET_ID);
 
-    List<List<Object>> values = SheetsHelper.getValues(service, SPREADSHEET_ID, CURRENT_RANGE_LOCATION);
+    List<List<Object>> values = sheetsHelper.getValues(CURRENT_RANGE_LOCATION);
     String writeRange = values.get(0).get(0).toString();
 
     Request appendRequest = new Request();
@@ -24,35 +25,14 @@ public class SheetsQuickstart {
     row1.add("Reply Randy");
     row1.add(new DateTime("2016-08-22T11:59:00.00Z"));
     data.add(row1);
-    ValueRange toWrite = new ValueRange();
-    toWrite.setMajorDimension("ROWS");
-    toWrite.setRange(writeRange);
-    toWrite.setValues(data);
-    AppendValuesResponse res = service.spreadsheets().values()
-            .append(SPREADSHEET_ID, writeRange, toWrite)
-            .set("valueInputOption", "USER_ENTERED")
-            .execute();
 
-    System.out.println(res.get("updates"));
-    writeRange = updateWriteRange(writeRange);
-
-    data = new LinkedList<>();
-    row1 = new LinkedList<>();
-    row1.add(writeRange);
-    data.add(row1);
-    toWrite = new ValueRange();
-    toWrite.setMajorDimension("ROWS");
-    toWrite.setRange("C2:C2");
-    toWrite.setValues(data);
-    service.spreadsheets().values()
-         .update(SPREADSHEET_ID, "C2:C2", toWrite)
-         .set("valueInputOption", "USER_ENTERED")
-         .execute();
+    sheetsHelper.writeToSheet(writeRange, data);
+    sheetsHelper.updateWriteRange(writeRange);
   }
 
   public static String updateWriteRange(String writeRange){
     int aVal = Integer.parseInt(writeRange.substring(1, writeRange.indexOf(':')));
-    int bVal = Integer.parseInt(writeRange.substring(writeRange.indexOf(':')+2), writeRange.length());
+    int bVal = Integer.parseInt(writeRange.substring(writeRange.indexOf(':')+2, writeRange.length()));
     System.out.printf("%d, %d\n", aVal, bVal);
     return "" + writeRange.charAt(0) + (aVal+1) + ':' + writeRange.charAt(writeRange.indexOf(':')+1) + (bVal+1);
   }
