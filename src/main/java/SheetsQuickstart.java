@@ -97,8 +97,28 @@ public class SheetsQuickstart {
             .append(spreadsheetId, writeRange, toWrite)
             .set("valueInputOption", "USER_ENTERED")
             .execute();
-    System.out.println(res.get("updates"));
 
-    
+    System.out.println(res.get("updates"));
+    writeRange = updateWriteRange(writeRange);
+
+    data = new LinkedList<>();
+    row1 = new LinkedList<>();
+    row1.add(writeRange);
+    data.add(row1);
+    toWrite = new ValueRange();
+    toWrite.setMajorDimension("ROWS");
+    toWrite.setRange("C2:C2");
+    toWrite.setValues(data);
+    service.spreadsheets().values()
+         .update(spreadsheetId, "C2:C2", toWrite)
+         .set("valueInputOption", "USER_ENTERED")
+         .execute();
+  }
+
+  public static String updateWriteRange(String writeRange){
+    int aVal = Integer.parseInt(writeRange.substring(1, writeRange.indexOf(':')));
+    int bVal = Integer.parseInt(writeRange.substring(writeRange.indexOf(':')+2), writeRange.length());
+    System.out.printf("%d, %d\n", aVal, bVal);
+    return "" + writeRange.charAt(0) + (aVal+1) + ':' + writeRange.charAt(writeRange.indexOf(':')+1) + (bVal+1);
   }
 }
